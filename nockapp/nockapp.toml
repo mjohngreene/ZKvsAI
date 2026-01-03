@@ -1,0 +1,6 @@
+[package]
+name = "zkrag-verifier"
+version = "0.1.0"
+description = "ZK-RAG Query Verification NockApp"
+
+[dependencies]

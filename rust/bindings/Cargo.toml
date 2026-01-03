@@ -1,0 +1,25 @@
+[package]
+name = "zkrag-bindings"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "zkrag_rust"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Workspace dependencies
+zkrag-circuits = { path = "../circuits" }
+zkrag-prover = { path = "../prover" }
+zkrag-verifier = { path = "../verifier" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+
+# Python bindings
+pyo3 = { version = "0.20", features = ["extension-module"] }
+
+[dev-dependencies]
+# Note: No Rust unit tests in this crate due to extension-module feature
+# Test via Python integration tests instead

@@ -1,0 +1,79 @@
+[tool.poetry]
+name = "zkrag"
+version = "0.1.0"
+description = "Privacy-Preserving AI/RAG Platform with Zero-Knowledge Proofs"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+license = "MIT"
+packages = [{include = "zkrag", from = "python"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+# AI/ML
+sentence-transformers = "^2.2"
+torch = "^2.0"
+numpy = "^1.24"
+
+# Vector database
+faiss-cpu = "^1.7"
+chromadb = "^0.4"
+
+# LLM integration
+langchain = "^0.1"
+openai = { version = "^1.0", optional = true }
+
+# CLI
+click = "^8.1"
+rich = "^13.5"
+
+# Data processing
+pandas = "^2.0"
+pydantic = "^2.0"
+
+# Cryptography
+cryptography = "^41.0"
+
+# Utilities
+python-dotenv = "^1.0"
+toml = "^0.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+pytest-cov = "^4.1"
+black = "^23.9"
+mypy = "^1.5"
+ruff = "^0.0.292"
+jupyter = "^1.0"
+ipykernel = "^6.25"
+maturin = "^1.3"
+
+[tool.poetry.scripts]
+zkrag = "zkrag.cli:main"
+
+[tool.poetry.extras]
+openai = ["openai"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
