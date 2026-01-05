@@ -50,6 +50,27 @@ The actual ZKvsAI platform runs **on Nockchain** and is implemented in:
 - Business logic
 - Production deployment
 
+### Private Document Storage
+
+**Location**: `~/.zkvsai/documents/` (local filesystem)
+
+**Purpose**: Store private credentials and documents that ZKvsAI generates proofs about.
+
+**Format**: JSON files following the schema in `docs/DOCUMENT_SCHEMA.md`
+
+**Supported document types**:
+- `passport` - International travel document
+- `drivers_license` - Government-issued driving permit
+- `credit_card` - Payment card information
+
+**Data flow**:
+1. User stores JSON documents in `~/.zkvsai/documents/`
+2. Rust HTTP driver reads files from disk
+3. Driver serializes documents to nouns
+4. Hoon NockApp processes document data
+5. ZK proofs generated about document claims
+6. Proofs posted to Nockchain (documents never leave device)
+
 ## Technology Stack
 
 ### NockApp Development
@@ -284,13 +305,14 @@ Tests should:
 **Must Read** (in order):
 1. `CORRECTIONS_SUMMARY.md` - What changed and why
 2. `docs/ARCHITECTURE_REVISED.md` - Complete architecture
-3. `docs/JOCK_EVALUATION.md` - Jock strategy
-4. `ARCHITECTURE_CORRECTIONS.md` - Detailed corrections
+3. `docs/DOCUMENT_SCHEMA.md` - Private document format specification
+4. `docs/JOCK_EVALUATION.md` - Jock strategy
+5. `ARCHITECTURE_CORRECTIONS.md` - Detailed corrections
 
 **Reference**:
-- `README.md` - Project overview (needs update)
-- `docs/GETTING_STARTED.md` - Tutorial (needs update)
-- `PROJECT_STATUS.md` - Current status (needs update)
+- `README.md` - Project overview
+- `docs/GETTING_STARTED.md` - Tutorial
+- `PROJECT_STATUS.md` - Current status
 
 ## Development Workflow
 
@@ -336,7 +358,7 @@ When implementing features:
 
 The project uses Git. Key files:
 - `.gitignore` - Excludes build artifacts, keys, etc.
-- No `.git` yet - needs `git init`
+- Remote: `https://github.com/mjohngreene/ZKvsAI.git`
 
 ## Future Work
 

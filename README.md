@@ -24,146 +24,178 @@ With ZKvsAI:
 - ✅ Zero-knowledge proofs verify correctness (no trust required)
 - ✅ Blockchain settlement provides decentralized verification (Nockchain)
 
-## 🏗️ Architecture
+## Architecture
 
-### Three-Tier System
+### NockApp-Centric Design
+
+**Important**: ZKvsAI is a **NockApp** (Nockchain application). The core platform runs on Nockchain, not as a standalone Python application.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Tier 1: Local Privacy Layer (Your Device)                  │
-│  • Document storage (encrypted)                              │
-│  • Local embeddings generation                               │
-│  • Local vector search                                       │
-│  • Local LLM inference                                       │
-│  • ZK proof generation                                       │
+│  YOUR DEVICE (Private - Never Leaves)                       │
+│                                                             │
+│  ~/.zkvsai/documents/                                       │
+│  ├── passport.json                                          │
+│  ├── drivers_license.json                                   │
+│  └── credit_card.json                                       │
 └─────────────────────────────────────────────────────────────┘
-                            ↓ (Only ZK Proofs)
+                            │
+                            │ Rust driver reads files
+                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Tier 2: Verification Layer (Nockchain)                     │
-│  • Proof verification                                        │
-│  • Document commitment registry                              │
-│  • Model registry                                            │
-│  • Usage tracking                                            │
+│  NockApp (Core Platform - Hoon/Nock)                        │
+│  • Document commitment generation                           │
+│  • Claim processing                                         │
+│  • State management                                         │
+│  • ZK proof preparation                                     │
 └─────────────────────────────────────────────────────────────┘
-                            ↓
+                            │
+                            │ Only: Proofs + Commitments
+                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Tier 3: Developer Layer (SDK & Tools)                      │
-│  • Python SDK                                                │
-│  • Rust SDK                                                  │
-│  • CLI tools                                                 │
-│  • Example applications                                      │
+│  Nockchain (Settlement Layer)                               │
+│  • Proof verification                                       │
+│  • Commitment registry                                      │
+│  • Public state                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
+### Component Roles
+
+| Component | Role | Location |
+|-----------|------|----------|
+| **Hoon NockApp** | Core platform logic | `nockapp/hoon/` |
+| **Rust Driver** | HTTP gateway, file I/O, ZK circuits | `nockapp/src/`, `rust/` |
+| **Python Tools** | Testing & development only | `python/` |
+
+## Quick Start
 
 ### Prerequisites
 
 - Rust 1.70+ ([rustup](https://rustup.rs/))
-- Python 3.9+
+- `hoonc` (Hoon compiler - when available)
+- Python 3.9+ (for testing tools only)
 - Poetry (Python package manager)
-- `hoonc` (Hoon compiler)
-- `nockup` CLI tool
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ZKvsAI.git
+git clone https://github.com/mjohngreene/ZKvsAI.git
 cd ZKvsAI
 
-# Build Rust components
+# Build Rust components (HTTP driver + ZK circuits)
 cargo build --release
 
-# Install Python dependencies
+# Set up document storage
+mkdir -p ~/.zkvsai/documents
+
+# (Optional) Install Python testing tools
 poetry install
+```
 
-# Build Python bindings
-cd rust/bindings
-poetry run maturin develop --release
-cd ../..
+### Create Your First Document
 
-# Set up NockApp
+Create a private document at `~/.zkvsai/documents/passport.json`:
+
+```json
+{
+  "id": "doc_passport_001",
+  "type": "passport",
+  "version": "1.0",
+  "created": "2026-01-05T12:00:00Z",
+  "fields": {
+    "number": "123456789",
+    "country": "USA",
+    "given_name": "John",
+    "surname": "Doe",
+    "date_of_birth": "1985-03-15",
+    "expiration": "2030-06-20"
+  }
+}
+```
+
+### Run the NockApp
+
+```bash
+# Start the NockApp HTTP server
 cd nockapp
-nockup project build
-cd ..
+cargo run --release
+
+# In another terminal, test the API
+curl http://localhost:8080/health
 ```
 
-### Usage Example
-
-```python
-from zkrag import PrivateRAG, NockchainVerifier
-
-# Initialize with your private documents
-rag = PrivateRAG(documents_dir="./my_private_docs")
-
-# Register your document collection (only commitment goes on-chain)
-commitment = rag.register_documents()
-print(f"Document commitment: {commitment}")
-
-# Query your documents privately
-response, proof = rag.query("What are the key findings in the research?")
-
-print(f"Answer: {response}")
-print(f"Proof generated: {len(proof)} bytes")
-
-# Verify the computation on Nockchain
-verifier = NockchainVerifier(endpoint="http://localhost:8080")
-verification = verifier.verify_query(proof)
-
-print(f"Verification: {'✅ Valid' if verification.is_valid else '❌ Invalid'}")
-```
-
-## 📖 How It Works
-
-### 1. Document Registration
+### Generate a Proof (Coming Soon)
 
 ```bash
-# User registers documents (only commitment, not content)
-zkrag register ./my_docs/
+# Request proof that passport exists and isn't expired
+curl -X POST http://localhost:8080/prove \
+  -H "Content-Type: application/json" \
+  -d '{"document_id": "doc_passport_001", "claim": "not_expired"}'
+```
+
+## How It Works
+
+### 1. Store Private Documents
+
+Store your private credentials locally in `~/.zkvsai/documents/`:
+
+```
+~/.zkvsai/documents/
+├── passport.json
+├── drivers_license.json
+└── credit_card.json
+```
+
+**Privacy guarantee**: Documents never leave your device.
+
+### 2. Generate Commitments
+
+The NockApp reads your documents and generates cryptographic commitments:
+
+```bash
+curl -X POST http://localhost:8080/commit \
+  -d '{"document_id": "doc_passport_001"}'
 ```
 
 **What happens:**
-- Documents are hashed locally
-- Merkle tree commitment is created
-- Only the commitment hash goes to Nockchain
-- Your documents never leave your device
+- NockApp reads document from local storage
+- Generates hash commitment of document contents
+- Commitment can be published (document stays private)
 
-### 2. Private Query with Verification
+### 3. Prove Claims About Documents
+
+Generate ZK proofs about your documents without revealing them:
 
 ```bash
-# User queries their private documents
-zkrag query "What are the key findings?"
+curl -X POST http://localhost:8080/prove \
+  -d '{"document_id": "doc_passport_001", "claim": "not_expired"}'
 ```
 
-**What happens:**
-1. Query embedding generated locally
-2. Vector similarity search in local database
-3. Relevant chunks retrieved locally
-4. LLM generates response locally
-5. ZK proof created proving: "I correctly queried registered documents"
-6. Proof submitted to Nockchain for verification
-7. Verification receipt returned
+**Example claims:**
+- "My passport is not expired"
+- "My credit limit exceeds $5,000"
+- "I am over 21 years old"
 
 **Privacy guarantees:**
-- ✅ Query text never revealed
-- ✅ Document content never revealed
-- ✅ Embeddings never revealed
-- ✅ Only proves computation was correct
+- Document content never revealed
+- Only the claim result is proven
+- Verifier learns nothing except claim validity
 
-### 3. Verification on Nockchain
+### 4. Verify Proofs on Nockchain
+
+Anyone can verify your proof without seeing your data:
 
 ```bash
-# Anyone can verify the computation
-zkrag verify <proof_id>
+curl http://localhost:8080/verify/<proof_id>
 ```
 
 **What happens:**
-- NockApp verifies ZK proof
-- Checks document commitment exists
-- Checks model hash is approved
-- Records verified query
-- Returns verification result
+- ZK proof verified mathematically
+- Commitment checked against registry
+- Verification result returned
+- Your private data remains private
 
 ## 🔒 Security & Privacy
 
@@ -183,122 +215,109 @@ zkrag verify <proof_id>
 3. **Computational Integrity**: ZK proofs verify correct execution
 4. **Model Transparency**: Verify which AI model was used
 
-## 🛠️ Technology Stack
+## Technology Stack
 
-### Local Layer (Rust + Python)
-- **Rust**: ZK circuits (arkworks), proof generation
-- **Python**: RAG engine, embeddings, vector search
-- **Local LLMs**: Ollama, llama.cpp, or similar
+### Core Platform (NockApp)
+- **Hoon**: Platform logic, state management, document processing
+- **Nock**: Compilation target, deterministic execution
+- **Nockchain**: Runtime environment, settlement layer
 
-### Verification Layer (Nockchain)
-- **Hoon**: State management, verification logic
-- **Rust**: HTTP API, noun-based messaging
-- **Nockchain**: Blockchain settlement
-
-### ZK Proof System
+### Infrastructure (Rust)
+- **Rust HTTP Driver**: File I/O, HTTP gateway, noun serialization
+- **ZK Circuits**: arkworks-based proof generation
 - **Groth16**: Proof system (128-bit security)
-- **BN254 Curve**: Elliptic curve
-- **arkworks**: Rust ZK library ecosystem
 
-## 📁 Project Structure
+### Testing Tools (Python)
+- **Python**: Test harness, development utilities
+- **Note**: Python is for testing only, not production
+
+## Project Structure
 
 ```
 ZKvsAI/
-├── rust/                    # Rust workspace
+├── nockapp/                 # CORE PLATFORM (NockApp)
+│   ├── hoon/                # Hoon kernel (platform logic)
+│   │   └── zkrag.hoon       # Main platform implementation
+│   └── src/                 # Rust HTTP driver
+│       └── main.rs          # File I/O, HTTP gateway
+│
+├── rust/                    # ZK Infrastructure
 │   ├── circuits/            # ZK circuit definitions
 │   ├── prover/              # Proof generation
 │   ├── verifier/            # Proof verification
-│   └── bindings/            # Python FFI bindings
+│   └── bindings/            # Python FFI (for testing)
 │
-├── python/                  # Python interface
-│   ├── zkrag/               # Main package
-│   │   ├── rag.py           # Private RAG engine
-│   │   ├── embeddings.py    # Local embeddings
-│   │   ├── documents.py     # Document manager
-│   │   └── proof.py         # Proof interface
-│   ├── tests/               # Python tests
-│   ├── scripts/             # Utility scripts
-│   └── notebooks/           # Jupyter notebooks
-│
-├── nockapp/                 # NockApp verifier
-│   ├── hoon/                # Hoon kernel
-│   ├── src/                 # Rust HTTP driver
-│   └── web/                 # Web interface
-│
-├── hoon/                    # Additional Hoon code
-├── data/                    # Data directory
-│   ├── documents/           # Sample documents
-│   └── proofs/              # Generated proofs
+├── python/                  # Testing Tools (NOT platform)
+│   └── zkrag/               # Test harness & client SDK
 │
 ├── docs/                    # Documentation
-│   ├── ARCHITECTURE.md      # System architecture
-│   ├── GETTING_STARTED.md   # Tutorial
-│   └── API.md               # API reference
+│   ├── DOCUMENT_SCHEMA.md   # Private document format spec
+│   ├── ARCHITECTURE_REVISED.md
+│   └── ...
 │
-└── .claude/                 # Claude Code tooling
-    ├── skills/              # Development skills
-    └── agents/              # Development agents
+└── ~/.zkvsai/documents/     # Private document storage (user's device)
+    ├── passport.json
+    ├── drivers_license.json
+    └── credit_card.json
 ```
 
-## 🎓 Use Cases
+## Use Cases
 
-### 1. Private Research Assistant
-Query your private research papers without uploading to cloud services.
+### 1. Travel Booking with Verified Credentials
+Prove your passport is valid and not expired to booking agents without revealing passport details.
 
-### 2. Medical Records Analysis
-Analyze sensitive health data locally with verifiable computation.
+### 2. Age Verification
+Prove you're over 21 without revealing your exact birthdate or ID number.
 
-### 3. Corporate Knowledge Base
-Enterprise document search without exposing proprietary information.
+### 3. Financial Qualification
+Prove your credit limit exceeds a threshold without revealing the exact amount.
 
-### 4. Legal Document Review
-Query legal documents while maintaining attorney-client privilege.
+### 4. Identity Verification for AI Agents
+Grant AI agents proof of your credentials so they can act on your behalf with verified authority.
 
-### 5. Personal Knowledge Management
-Build a private second brain with full data sovereignty.
+### 5. Privacy-Preserving KYC
+Complete know-your-customer requirements with minimal data exposure.
 
-## 🚦 Roadmap
+## Roadmap
 
-### ✅ Phase 1: Foundation (Current)
-- [x] Project structure and tooling
-- [x] Architecture design
-- [ ] Basic ZK circuits
-- [ ] Local RAG engine
-- [ ] Simple proof generation
+### Phase 1: NockApp Foundation (Current)
+- [x] Project structure and architecture
+- [x] Document schema specification
+- [ ] Hoon kernel implementation
+- [ ] Rust HTTP driver with file I/O
+- [ ] Basic commitment generation
 
-### 🚧 Phase 2: Integration (In Progress)
-- [ ] NockApp verifier implementation
-- [ ] End-to-end workflow
-- [ ] CLI tools
-- [ ] Documentation
+### Phase 2: Proof Generation
+- [ ] ZK circuits for document claims
+- [ ] Expiration date proofs
+- [ ] Range proofs (age, credit limit)
+- [ ] Proof serialization
 
-### 📋 Phase 3: Features (Planned)
-- [ ] Model registry
-- [ ] Multi-document queries
-- [ ] Web interface
-- [ ] Example applications
+### Phase 3: Nockchain Integration
+- [ ] On-chain commitment registry
+- [ ] Proof verification on-chain
+- [ ] Settlement workflow
 
-### 🔮 Phase 4: Advanced (Future)
-- [ ] Multi-party collaboration
-- [ ] Federated learning integration
-- [ ] TEE support
-- [ ] Production deployment
+### Phase 4: AI Agent Integration (Future)
+- [ ] Proof handoff to external agents
+- [ ] Agent credential verification
+- [ ] Multi-claim proofs
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! This project combines:
-- Zero-knowledge proofs (Rust/arkworks)
-- NockApp development (Hoon/Rust)
-- Privacy-preserving ML (Python)
+- **Hoon/Nock**: NockApp platform development
+- **Rust**: HTTP driver, ZK circuits (arkworks)
+- **Python**: Testing tools only
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## 📚 Documentation
+## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - System design and technical details
-- [Getting Started](docs/GETTING_STARTED.md) - Step-by-step tutorial
-- [API Reference](docs/API.md) - Complete API documentation
-- [Development Guide](docs/DEVELOPMENT.md) - Contributing guide
+- [Document Schema](docs/DOCUMENT_SCHEMA.md) - Private document format specification
+- [Architecture](docs/ARCHITECTURE_REVISED.md) - System design
+- [Getting Started](docs/GETTING_STARTED.md) - Tutorial
+- [CLAUDE.md](CLAUDE.md) - Development guidance
 
 ## 🔗 Related Projects
 
@@ -317,13 +336,13 @@ MIT License - See [LICENSE](LICENSE) file for details
 - [arkworks](https://github.com/arkworks-rs) - ZK proof libraries
 - [Urbit](https://urbit.org) - Hoon language and inspiration
 
-## 📞 Contact
+## Contact
 
 Questions? Issues? Ideas?
 
-- Open an issue: [GitHub Issues](https://github.com/yourusername/ZKvsAI/issues)
-- Discussions: [GitHub Discussions](https://github.com/yourusername/ZKvsAI/discussions)
+- Open an issue: [GitHub Issues](https://github.com/mjohngreene/ZKvsAI/issues)
+- Discussions: [GitHub Discussions](https://github.com/mjohngreene/ZKvsAI/discussions)
 
 ---
 
-**Built with privacy, verified with math, settled on blockchain.**
+**Your data stays yours. Proofs speak for themselves.**

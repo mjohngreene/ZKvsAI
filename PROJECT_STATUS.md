@@ -1,380 +1,257 @@
 # ZKvsAI Project Status
 
-**Last Updated**: 2026-01-03
+**Last Updated**: 2026-01-05
 
 ## Project Overview
 
-ZKvsAI is a privacy-preserving AI/RAG platform that inverts the traditional paradigm by bringing AI computation to your data rather than sending your data to AI services. It uses zero-knowledge proofs for verifiable computation and Nockchain for decentralized verification.
+ZKvsAI is a privacy-preserving credential verification platform built as a **NockApp** (Nockchain application). Users store private documents (passport, driver's license, credit cards) locally and generate zero-knowledge proofs about those documents without revealing the underlying data.
 
-## Current Status: ✅ Phase 1 Complete - Foundation Ready
+**Critical Note**: ZKvsAI is a NockApp, NOT a Python application. Python code exists for testing only.
+
+## Current Status: Phase 1 In Progress - NockApp Foundation
 
 ### What's Been Completed
 
-#### 1. ✅ Project Structure & Tooling
-- [x] Complete directory structure created
+#### 1. ✅ Project Structure & Architecture
+- [x] Directory structure created
 - [x] Rust workspace configured (circuits, prover, verifier, bindings)
-- [x] Python package structure with Poetry
-- [x] NockApp verifier structure
-- [x] Claude Code skills and agents copied from existing projects
-  - `hoon-development` skill
-  - `nockapp-api-design` skill
-  - `snark-testing` skill
-  - `nockapp-developer` agent
+- [x] NockApp structure in place
+- [x] Architecture documentation corrected (NockApp-first)
+- [x] Git repository initialized and pushed to GitHub
 
-#### 2. ✅ Comprehensive Documentation
-- [x] **README.md** - Project overview and quick start
-- [x] **ARCHITECTURE.md** - Complete system design with data flow diagrams
-- [x] **GETTING_STARTED.md** - Step-by-step tutorial
-- [x] **HELLO_WORLD_PROTOTYPE.md** - Prototype specification and roadmap
+#### 2. ✅ Document Schema Specification
+- [x] **docs/DOCUMENT_SCHEMA.md** - Private document format
+- [x] Defined document types: passport, drivers_license, credit_card
+- [x] JSON schema with type inference rules
+- [x] Storage location: `~/.zkvsai/documents/`
 
-#### 3. ✅ Rust Implementation (Scaffolding)
-**Circuits** (`rust/circuits/`):
-- [x] DocumentQueryCircuit skeleton
-- [x] Circuit trait definitions
-- [x] Utility functions (hash, Merkle proofs - placeholders)
+#### 3. ✅ Documentation
+- [x] **CLAUDE.md** - Development guidance (updated)
+- [x] **README.md** - Project overview (updated for NockApp-first)
+- [x] **CORRECTIONS_SUMMARY.md** - Architecture corrections
 
-**Prover** (`rust/prover/`):
-- [x] QueryProver structure
-- [x] Witness generation framework
-- [x] Proof generation interface
-- [x] Key caching support
+#### 4. Scaffolding (Exists but needs implementation)
 
-**Verifier** (`rust/verifier/`):
-- [x] QueryVerifier structure
-- [x] Public input types
-- [x] Verification result types
+**Rust** (`rust/`):
+- [x] Circuit structure exists (needs real constraints)
+- [x] Prover structure exists (placeholder implementation)
+- [x] Verifier structure exists (placeholder implementation)
 
-**Bindings** (`rust/bindings/`):
-- [x] PyO3 Python bindings
-- [x] `generate_proof()` function
-- [x] `verify_proof()` function
-- [x] `verify_proof_detailed()` function
+**Hoon** (`nockapp/hoon/`):
+- [x] `verifier.hoon` exists (needs rename to `zkrag.hoon`)
+- [ ] Document type handling not implemented
+- [ ] Local file access not implemented
 
-#### 4. ✅ Python Implementation (Full Featured)
-**Core Modules**:
-- [x] **documents.py** - Document management and chunking
-- [x] **embeddings.py** - Local embedding generation
-- [x] **vector_store.py** - Semantic search with cosine similarity
-- [x] **rag.py** - Complete private RAG engine
-- [x] **proof.py** - ZK proof generation interface
-- [x] **verifier.py** - Nockchain verifier interface
-- [x] **cli.py** - Full-featured CLI with commands:
-  - `zkrag index` - Index documents
-  - `zkrag query` - Query with optional proof generation
-  - `zkrag register` - Register commitment on Nockchain
-  - `zkrag stats` - Show statistics
-  - `zkrag info` - System information
+**Rust HTTP Driver** (`nockapp/src/`):
+- [x] HTTP server structure with Axum
+- [ ] File I/O for `~/.zkvsai/documents/` not implemented
+- [ ] JSON parsing for document schema not implemented
 
-#### 5. ✅ NockApp Verifier
-- [x] Hoon kernel (`verifier.hoon`) with:
-  - Document registration
-  - Model registration
-  - Query verification
-  - State management
-- [x] Rust HTTP driver with Axum
-  - REST API endpoints
-  - CORS support
-  - Health checks
+#### 5. Testing Tools (Python) - FOR TESTING ONLY
+**Note**: Python code is for testing the NockApp, NOT the platform itself.
+
+- [x] Package structure exists
+- [x] CLI structure exists
+- [ ] Needs repositioning to `tools/python/`
+- [ ] Needs refactoring to test NockApp HTTP API
 
 ## File Structure
 
 ```
 ZKvsAI/
-├── Cargo.toml                    # Rust workspace
-├── pyproject.toml                # Python package
-├── README.md
-├── PROJECT_STATUS.md             # This file
+├── nockapp/                      # CORE PLATFORM (NockApp)
+│   ├── hoon/
+│   │   └── verifier.hoon         # (rename to zkrag.hoon)
+│   └── src/
+│       └── main.rs               # Rust HTTP driver
+│
+├── rust/                         # ZK Infrastructure
+│   ├── circuits/                 # ZK circuits (scaffolding)
+│   ├── prover/                   # Proof generation (scaffolding)
+│   ├── verifier/                 # Proof verification (scaffolding)
+│   └── bindings/                 # Python FFI (for testing)
+│
+├── python/                       # Testing Tools (NOT platform)
+│   └── zkrag/                    # Test harness
 │
 ├── docs/
-│   ├── ARCHITECTURE.md           # System design
-│   ├── GETTING_STARTED.md        # Tutorial
-│   └── HELLO_WORLD_PROTOTYPE.md  # Prototype spec
+│   ├── DOCUMENT_SCHEMA.md        # Document format spec
+│   ├── ARCHITECTURE_REVISED.md   # System architecture
+│   └── ...
 │
-├── .claude/
-│   ├── skills/                   # Development skills
-│   │   ├── hoon-development/
-│   │   ├── nockapp-api-design/
-│   │   └── snark-testing/
-│   └── agents/
-│       └── nockapp-developer.md  # NockApp agent
-│
-├── rust/
-│   ├── circuits/                 # ZK circuits
-│   ├── prover/                   # Proof generation
-│   ├── verifier/                 # Proof verification
-│   └── bindings/                 # Python FFI
-│
-├── python/
-│   └── zkrag/                    # Main package
-│       ├── __init__.py
-│       ├── documents.py
-│       ├── embeddings.py
-│       ├── vector_store.py
-│       ├── rag.py
-│       ├── proof.py
-│       ├── verifier.py
-│       └── cli.py
-│
-├── nockapp/                      # Verification service
-│   ├── nockapp.toml
-│   ├── Cargo.toml
-│   ├── hoon/
-│   │   └── verifier.hoon
-│   └── src/
-│       └── main.rs
-│
-└── data/
-    ├── documents/                # User documents
-    └── proofs/                   # Generated proofs
+└── ~/.zkvsai/documents/          # Private documents (user's device)
+    ├── passport.json
+    ├── drivers_license.json
+    └── credit_card.json
 ```
 
 ## What Works Right Now
 
-### ✅ Fully Functional
-1. **Python RAG Engine**
-   - Document loading and chunking
-   - Local embedding generation (sentence-transformers)
-   - Vector similarity search
-   - Query processing
-   - Statistics and commitment generation
+### ✅ Complete
+1. **Architecture & Documentation**
+   - NockApp-first architecture defined
+   - Document schema specification complete
+   - Development guidance (CLAUDE.md) updated
 
-2. **CLI Interface**
-   - All commands implemented
-   - Rich terminal output
-   - Error handling
+2. **Project Structure**
+   - All directories in place
+   - Rust workspace configured
+   - Git repository on GitHub
 
-3. **Documentation**
-   - Complete architecture docs
-   - Getting started guide
-   - Prototype roadmap
+### ⚠️ Scaffolding Only (Needs Implementation)
+1. **Hoon NockApp** (`nockapp/hoon/`)
+   - Basic structure exists
+   - Document type handling needed
+   - State management needed
 
-### ⚠️ Placeholder/TODO
-1. **ZK Proof Generation**
-   - Circuit scaffolding exists
-   - Actual constraint implementation needed
-   - Trusted setup required
-   - Currently returns placeholder proofs
+2. **Rust HTTP Driver** (`nockapp/src/`)
+   - HTTP server runs
+   - File I/O for documents needed
+   - JSON schema validation needed
 
-2. **Proof Verification**
-   - Verifier structure exists
-   - Real Groth16 verification needed
-   - Hoon integration needed
+3. **ZK Circuits** (`rust/circuits/`)
+   - Structure exists
+   - Real constraints needed
+   - Trusted setup needed
 
-3. **NockApp Integration**
-   - HTTP API works
-   - Hoon kernel scaffolding exists
-   - Noun-based communication needed
-   - On-chain settlement pending
+### ❌ Not Started
+1. Proof generation for document claims
+2. Nockchain integration
+3. End-to-end workflow
 
 ## Next Steps
 
-### Immediate (This Week)
-1. **Test the Build**
+### Immediate Priority
+1. **Rename Hoon file**
    ```bash
-   # Build Rust components
-   cargo build --release
-
-   # Install Python dependencies
-   poetry install
-
-   # Build bindings
-   cd rust/bindings
-   poetry run maturin develop --release
-   cd ../..
+   mv nockapp/hoon/verifier.hoon nockapp/hoon/zkrag.hoon
    ```
 
-2. **Create Sample Documents**
+2. **Create sample documents**
    ```bash
-   mkdir -p data/documents
-   echo "Sample document content" > data/documents/test.txt
+   mkdir -p ~/.zkvsai/documents
+   # Create passport.json, drivers_license.json per DOCUMENT_SCHEMA.md
    ```
 
-3. **Test CLI Commands**
+3. **Test NockApp server**
    ```bash
-   poetry run zkrag index ./data/documents
-   poetry run zkrag query ./data/documents "test query"
-   poetry run zkrag stats ./data/documents
+   cd nockapp && cargo run --release
+   curl http://localhost:8080/health
    ```
 
-### Week 1-2: Real Embeddings & Search
-- [ ] Test sentence-transformers integration
-- [ ] Verify vector search quality
-- [ ] Benchmark performance
-- [ ] Add example documents
+### Phase 1: NockApp Foundation
+- [ ] Rename `verifier.hoon` to `zkrag.hoon`
+- [ ] Add document type handling to Hoon kernel
+- [ ] Implement file I/O in Rust driver
+- [ ] Add JSON parsing for document schema
+- [ ] Basic commitment generation
 
-### Week 3-4: ZK Proof Implementation
-- [ ] Implement actual circuit constraints
-- [ ] Run Groth16 trusted setup
-- [ ] Generate real proofs
-- [ ] Test proof serialization
+### Phase 2: Proof Generation
+- [ ] Design claim types (expiration, age, range)
+- [ ] Implement ZK circuits for claims
+- [ ] Proof serialization
+- [ ] API endpoints for proof requests
 
-### Week 5-6: Verification Integration
-- [ ] Integrate Groth16 verifier
-- [ ] Connect Hoon kernel to Rust driver
-- [ ] Test noun-based messaging
-- [ ] End-to-end verification workflow
-
-### Week 7-8: Polish & Documentation
-- [ ] Add comprehensive tests
-- [ ] Create example applications
-- [ ] Record demo video
-- [ ] Write deployment guide
+### Phase 3: Integration
+- [ ] End-to-end proof workflow
+- [ ] Nockchain commitment registry
+- [ ] Verification on-chain
 
 ## Resources Leveraged
 
-Your existing projects provided critical components:
-
-### From ZKProofBuilder
-- ✅ Rust ZK proof architecture
-- ✅ PyO3 bindings patterns
-- ✅ Groth16 integration approach
-- ✅ Python CLI design
-- ✅ Witness generation patterns
-
-### From nockup-prover
-- ✅ NockApp structure
-- ✅ Hoon kernel patterns
-- ✅ Rust HTTP driver
-- ✅ API design patterns
-- ✅ Development skills (hoon-development, nockapp-api-design, snark-testing)
-
-### From NockappBuilder
-- ✅ nockapp-developer agent
-- ✅ Dual Rust/Hoon development patterns
+Existing projects provided patterns:
+- **ZKProofBuilder**: Rust ZK architecture, Groth16 patterns
+- **nockup-prover**: NockApp structure, Hoon patterns, HTTP driver
+- **NockappBuilder**: nockapp-developer agent
 
 ## Development Tools Available
 
-### Claude Code Skills
-Located in `.claude/skills/`:
+### Claude Code Skills (`.claude/skills/`)
+- **hoon-development** - Hoon programming guide
+- **nockapp-api-design** - NockApp endpoint creation
+- **snark-testing** - Proof testing workflows
 
-1. **hoon-development** - Complete Hoon programming guide
-   - Syntax, types, patterns
-   - State management
-   - Map operations
-   - Testing
-
-2. **nockapp-api-design** - NockApp endpoint creation
-   - 4-step pattern (Hoon types → Handler → Rust API → Frontend)
-   - Examples and common patterns
-
-3. **snark-testing** - Proof testing workflows
-   - Sample data handling
-   - API testing
-   - Verification testing
-
-### Claude Code Agent
-Located in `.claude/agents/`:
-
-**nockapp-developer** - Expert NockApp development agent
-- Rust/Hoon dual-language expertise
-- Nockchain repository awareness
-- Code review and troubleshooting
-- Best practices guidance
+### Claude Code Agent (`.claude/agents/`)
+- **nockapp-developer** - Expert NockApp development
 
 ## Known Limitations
 
-### Current Prototype
-- ❌ ZK proofs are placeholders (not cryptographically secure)
-- ❌ No actual on-chain settlement yet
-- ❌ No LLM integration (returns chunks, not generated answers)
-- ❌ Single-user only
-- ❌ No Merkle tree proofs
-- ❌ Simple cosine similarity (not optimized vector search)
+### Current State
+- ❌ ZK proofs are placeholders
+- ❌ No actual on-chain settlement
+- ❌ File I/O not implemented in driver
+- ❌ Document type handling not in Hoon
 
 ### By Design (Privacy-First)
-- ✅ No cloud storage
-- ✅ No external API calls for embeddings
-- ✅ All computation local
-- ✅ Documents never transmitted
+- ✅ Documents stored locally only
+- ✅ No cloud dependencies
+- ✅ All computation local to user
 
 ## Quick Commands Reference
 
 ```bash
-# Build everything
+# Build Rust components
 cargo build --release
-poetry install
-cd rust/bindings && poetry run maturin develop --release && cd ../..
 
-# Index documents
-poetry run zkrag index ./data/documents
-
-# Query
-poetry run zkrag query ./data/documents "your question"
-
-# Query with proof
-poetry run zkrag query ./data/documents "your question" --proof
-
-# Register on Nockchain
-poetry run zkrag register ./data/documents
-
-# View stats
-poetry run zkrag stats ./data/documents
-
-# System info
-poetry run zkrag info
-
-# Start NockApp verifier
+# Start NockApp server
 cd nockapp && cargo run --release
+
+# Test health endpoint
+curl http://localhost:8080/health
+
+# (Future) Create sample documents
+mkdir -p ~/.zkvsai/documents
+# Add JSON files per docs/DOCUMENT_SCHEMA.md
 ```
 
 ## Testing Checklist
 
-Before proceeding with development:
-
-- [ ] Rust workspace builds without errors
-- [ ] Python package installs successfully
-- [ ] PyO3 bindings compile
-- [ ] CLI is accessible
-- [ ] Can index sample documents
-- [ ] Can query documents
-- [ ] Embeddings are generated
-- [ ] Vector search returns relevant results
+- [ ] Rust workspace builds
 - [ ] NockApp HTTP server starts
 - [ ] Health endpoint responds
+- [ ] Sample documents created in ~/.zkvsai/documents/
+- [ ] (Future) Document endpoints work
+- [ ] (Future) Proof generation works
 
 ## Success Criteria
 
-### Phase 1 (Current) ✅
-- [x] Project structure complete
-- [x] Documentation written
-- [x] Python RAG engine functional
-- [x] Rust scaffolding ready
-- [x] NockApp structure created
+### Phase 1: NockApp Foundation (Current)
+- [x] Architecture documented
+- [x] Document schema defined
+- [ ] Hoon kernel handles document types
+- [ ] Rust driver reads local files
+- [ ] Basic commitment generation
 
-### Phase 2 (Next)
-- [ ] Real embeddings working
-- [ ] Vector search quality verified
-- [ ] Performance benchmarked
-- [ ] Example documents added
+### Phase 2: Proof Generation
+- [ ] Claim types defined
+- [ ] ZK circuits implemented
+- [ ] Proofs generated and serialized
 
-### Phase 3 (Future)
-- [ ] Real ZK proofs generated
-- [ ] On-chain verification working
-- [ ] End-to-end demo completed
-- [ ] Ready for user testing
+### Phase 3: Integration
+- [ ] End-to-end workflow
+- [ ] Nockchain settlement
+- [ ] Demo complete
 
 ## Getting Help
 
-- **Documentation**: See `docs/` directory
-- **Architecture**: Read `docs/ARCHITECTURE.md`
-- **Tutorial**: Follow `docs/GETTING_STARTED.md`
-- **Roadmap**: Check `docs/HELLO_WORLD_PROTOTYPE.md`
+- **Development Guide**: `CLAUDE.md`
+- **Document Format**: `docs/DOCUMENT_SCHEMA.md`
+- **Architecture**: `docs/ARCHITECTURE_REVISED.md`
 
 ## Summary
 
-You now have a **complete foundation** for building a privacy-preserving AI/RAG platform:
+ZKvsAI is a **NockApp** for privacy-preserving credential verification:
 
-✅ **Architecture designed** - Clear data flows and security model
-✅ **Code scaffolding ready** - Rust, Python, Hoon all structured
-✅ **RAG engine functional** - Local document query works
-✅ **Tools available** - Skills and agents for development
-✅ **Documentation complete** - Guides and specifications written
+- **Platform**: Hoon NockApp on Nockchain
+- **Documents**: Stored locally at `~/.zkvsai/documents/`
+- **Proofs**: ZK proofs about document claims
+- **Python**: Testing tools only (not the platform)
 
-**Next milestone**: Implement real ZK circuits and proof generation.
+**Current focus**: Implement Hoon kernel and Rust driver for document handling.
 
 ---
 
 **Project initialized**: 2026-01-03
-**Status**: Foundation complete, ready for development
-**Contributors**: You + Claude Code
+**Last updated**: 2026-01-05
+**Repository**: https://github.com/mjohngreene/ZKvsAI
 **License**: MIT
