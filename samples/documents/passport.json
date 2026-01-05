@@ -1,0 +1,14 @@
+{
+  "id": "doc_passport_001",
+  "type": "passport",
+  "version": "1.0",
+  "created": "2026-01-05T12:00:00Z",
+  "fields": {
+    "number": "123456789",
+    "country": "USA",
+    "given_name": "John",
+    "surname": "Doe",
+    "date_of_birth": "1985-03-15",
+    "expiration": "2030-06-20"
+  }
+}

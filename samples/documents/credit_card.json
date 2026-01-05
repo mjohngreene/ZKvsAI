@@ -1,0 +1,14 @@
+{
+  "id": "doc_card_001",
+  "type": "credit_card",
+  "version": "1.0",
+  "created": "2026-01-05T12:00:00Z",
+  "fields": {
+    "card_number": "4111111111114242",
+    "last_four": "4242",
+    "issuer": "Chase",
+    "cardholder": "John Doe",
+    "expiration": "2027-08",
+    "credit_limit": 10000
+  }
+}

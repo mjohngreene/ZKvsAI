@@ -139,6 +139,7 @@ Payment card information.
   "version": "1.0",
   "created": "2026-01-05T12:00:00Z",
   "fields": {
+    "card_number": "4111111111114242",
     "last_four": "4242",
     "issuer": "Chase",
     "cardholder": "John Doe",
@@ -150,6 +151,7 @@ Payment card information.
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `card_number` | string | Full card number (private, never proven directly) |
 | `last_four` | string | Last four digits of card number |
 | `issuer` | string | Card issuer/bank |
 | `cardholder` | string | Name on card |

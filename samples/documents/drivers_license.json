@@ -1,0 +1,15 @@
+{
+  "id": "doc_license_001",
+  "type": "drivers_license",
+  "version": "1.0",
+  "created": "2026-01-05T12:00:00Z",
+  "fields": {
+    "number": "D1234567",
+    "state": "CA",
+    "given_name": "John",
+    "surname": "Doe",
+    "date_of_birth": "1985-03-15",
+    "expiration": "2028-03-15",
+    "class": "C"
+  }
+}
