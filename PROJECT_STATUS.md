@@ -38,7 +38,7 @@ ZKvsAI is a privacy-preserving credential verification platform built as a **Noc
 - [x] Verifier structure exists (placeholder implementation)
 
 **Hoon** (`nockapp/hoon/`):
-- [x] `verifier.hoon` exists (needs rename to `zkrag.hoon`)
+- [x] `zkrag.hoon` - main platform file
 - [ ] Document type handling not implemented
 - [ ] Local file access not implemented
 
@@ -61,7 +61,7 @@ ZKvsAI is a privacy-preserving credential verification platform built as a **Noc
 ZKvsAI/
 ├── nockapp/                      # CORE PLATFORM (NockApp)
 │   ├── hoon/
-│   │   └── verifier.hoon         # (rename to zkrag.hoon)
+│   │   └── zkrag.hoon             # Main platform logic
 │   └── src/
 │       └── main.rs               # Rust HTTP driver
 │
@@ -122,10 +122,8 @@ ZKvsAI/
 ## Next Steps
 
 ### Immediate Priority
-1. **Rename Hoon file**
-   ```bash
-   mv nockapp/hoon/verifier.hoon nockapp/hoon/zkrag.hoon
-   ```
+1. **Hoon file renamed** ✓
+   - `nockapp/hoon/zkrag.hoon` is the main platform file
 
 2. **Create sample documents**
    ```bash
@@ -140,7 +138,7 @@ ZKvsAI/
    ```
 
 ### Phase 1: NockApp Foundation
-- [ ] Rename `verifier.hoon` to `zkrag.hoon`
+- [x] Rename `verifier.hoon` to `zkrag.hoon`
 - [ ] Add document type handling to Hoon kernel
 - [ ] Implement file I/O in Rust driver
 - [ ] Add JSON parsing for document schema

@@ -150,7 +150,7 @@ nockapp/
 
 ### Short-term (Refocus Development)
 1. **Expand Hoon implementation** in `nockapp/hoon/`
-   - Rename `verifier.hoon` to `zkrag.hoon`
+   - ✅ Renamed `verifier.hoon` to `zkrag.hoon`
    - Implement document registry
    - Implement query handler
    - Implement state management
@@ -198,7 +198,7 @@ nockapp/
 
 ### Code (Needs Reorganization)
 - ⚠️ `python/zkrag/` - Should move to `tools/python/zkrag_client/`
-- ⚠️ `nockapp/hoon/verifier.hoon` - Should rename to `zkrag.hoon`
+- ✅ `nockapp/hoon/zkrag.hoon` - Main platform file (renamed)
 - ✅ `nockapp/src/main.rs` - HTTP driver is correct
 - ✅ `rust/circuits/` - ZK circuits structure is good
 

@@ -275,7 +275,7 @@ Users receive collaborative insights
 
 **Location:** `nockapp/`
 
-**Hoon Kernel** (`nockapp/hoon/verifier.hoon`):
+**Hoon Kernel** (`nockapp/hoon/zkrag.hoon`):
 
 ```hoon
 ::  State Structure
