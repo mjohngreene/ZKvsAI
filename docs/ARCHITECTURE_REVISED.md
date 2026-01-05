@@ -1,327 +1,391 @@
-# ZKvsAI - Revised Architecture (Nockchain-First)
+# ZKvsAI - Architecture
 
-## Critical Architectural Shift
+## Overview
 
-**Previous misconception**: Python as the core platform with Nockchain for verification only.
-
-**Correct architecture**: **Nockchain NockApp as the core platform**, with Python only for testing and client tooling.
+ZKvsAI is a **NockApp** (Nockchain application) for privacy-preserving credential verification. Users store private documents locally and generate zero-knowledge proofs about those documents without revealing the underlying data.
 
 ## Core Principle
 
-ZKvsAI is a **NockApp** (Nockchain application) that:
-1. Runs on Nockchain (not as a separate Python application)
-2. Implements privacy-preserving RAG entirely on-chain using Hoon/Jock
-3. Uses ZK proofs to verify correct execution
-4. Provides APIs for clients to interact with it
+**Your data stays on your device. Only proofs leave.**
 
-## System Architecture (Corrected)
+ZKvsAI enables:
+1. Local storage of private credentials (passport, license, credit cards)
+2. Generation of cryptographic commitments to those documents
+3. ZK proofs about document claims ("passport not expired", "age > 21")
+4. Verification of proofs without revealing document contents
 
-### Layer 1: NockApp Core (On Nockchain)
-
-**Technology**: Hoon/Jock + Nock
-
-**Components**:
-- **Document Registry** (Hoon state)
-  - Stores document commitments (Merkle roots)
-  - Owner permissions
-  - Document metadata
-
-- **Model Registry** (Hoon state)
-  - Approved embedding models
-  - Model hashes
-  - Verification keys
-
-- **Query Processor** (Hoon/Jock logic)
-  - Receives encrypted queries
-  - Processes RAG operations on-chain
-  - Generates responses
-  - Creates ZK proofs
-
-- **Proof Verifier** (Hoon/Jock logic)
-  - Verifies ZK proofs of computation
-  - Validates query integrity
-  - Records verified queries
-
-### Layer 2: Rust Driver (HTTP Gateway)
-
-**Technology**: Rust + Axum
-
-**Purpose**: HTTP interface to the NockApp
-
-**Components**:
-- REST API endpoints
-- Noun serialization/deserialization
-- Kernel communication
-- Static file serving
-
-### Layer 3: Client Tools (Python - Testing/Utilities Only)
-
-**Technology**: Python
-
-**Purpose**: **NOT the platform**, only for:
-- Testing the NockApp
-- Development utilities
-- Client SDKsfor interacting with the NockApp
-- Benchmarking tools
-
-**What Python does NOT do**:
-- ❌ Does NOT implement the RAG engine (that's in Hoon/Jock)
-- ❌ Does NOT run the core platform (that's the NockApp)
-- ❌ Does NOT generate embeddings for the platform (happens on-chain or via oracle)
-- ❌ Does NOT store documents (managed by NockApp state)
-
-## Data Flow (Corrected)
-
-### Flow 1: Document Registration
+## System Architecture
 
 ```
-User (via client)
-  ↓
-1. Hash documents locally
-  ↓
-2. Generate Merkle tree commitment
-  ↓
-3. Submit commitment via HTTP API
-  ↓
-Rust Driver
-  ↓
-4. Convert to noun
-  ↓
-Hoon/Jock Kernel (NockApp)
-  ↓
-5. Store commitment in state
-  ↓
-6. Return registration receipt
-  ↓
-On-chain record created
+┌─────────────────────────────────────────────────────────────┐
+│  USER'S DEVICE (Private - Off-Chain)                        │
+│                                                             │
+│  ~/.zkvsai/documents/                                       │
+│  ├── passport.json                                          │
+│  ├── drivers_license.json                                   │
+│  └── credit_card.json                                       │
+│                                                             │
+│  Format: See docs/DOCUMENT_SCHEMA.md                        │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ Rust driver reads local files
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  RUST HTTP DRIVER (nockapp/src/main.rs)                     │
+│  • Reads documents from ~/.zkvsai/documents/                │
+│  • Parses JSON according to document schema                 │
+│  • Serializes to nouns for Hoon kernel                      │
+│  • Exposes HTTP API for proof requests                      │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ Noun data
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  HOON NOCKAPP (nockapp/hoon/zkrag.hoon)                     │
+│  • Processes document data                                  │
+│  • Generates commitments (hashes)                           │
+│  • Validates claim requests                                 │
+│  • Prepares data for ZK proof generation                    │
+│  • Manages state (registered commitments)                   │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ Commitment + Claim data
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  ZK PROOF GENERATION (rust/circuits/)                       │
+│  • Takes private document data + public claim               │
+│  • Generates ZKP proving claim is true                      │
+│  • Outputs: proof + public inputs                           │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            │ Only: Proof + Commitment
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  NOCKCHAIN (Settlement Layer)                               │
+│  • Stores commitments (not documents)                       │
+│  • Verifies proofs                                          │
+│  • Public verification record                               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Flow 2: Private RAG Query (On-Chain Processing)
+### Layer 1: Local Document Storage
+
+**Location**: `~/.zkvsai/documents/`
+
+**Format**: JSON files per `docs/DOCUMENT_SCHEMA.md`
+
+**Document Types**:
+- `passport` - International travel document
+- `drivers_license` - Government-issued ID
+- `credit_card` - Payment card info
+
+**Privacy**: Documents NEVER leave the user's device.
+
+### Layer 2: Rust HTTP Driver
+
+**Location**: `nockapp/src/main.rs`
+
+**Responsibilities**:
+- Read documents from local filesystem
+- Parse JSON according to document schema
+- Serialize document data to nouns
+- Communicate with Hoon kernel
+- Expose HTTP API for clients
+
+### Layer 3: Hoon NockApp
+
+**Location**: `nockapp/hoon/zkrag.hoon`
+
+**Responsibilities**:
+- Process document data from driver
+- Generate cryptographic commitments
+- Validate claim requests
+- Manage registered commitment state
+- Coordinate with ZK proof generation
+
+### Layer 4: ZK Circuits
+
+**Location**: `rust/circuits/`
+
+**Responsibilities**:
+- Define constraints for document claims
+- Generate proofs that claims are true
+- Output proofs without revealing private data
+
+### Layer 5: Python Tools (Testing Only)
+
+**Location**: `python/`
+
+**Purpose**: Testing and development utilities only.
+
+**NOT for**: Core platform implementation.
+
+## Data Flows
+
+### Flow 1: Store Private Document
 
 ```
-User encrypts query locally
+User creates document file
   ↓
-Submit encrypted query + commitment
+~/.zkvsai/documents/passport.json
   ↓
-Rust Driver → Hoon/Jock Kernel
+{
+  "id": "doc_passport_001",
+  "type": "passport",
+  "version": "1.0",
+  "fields": {
+    "number": "123456789",
+    "expiration": "2030-06-20",
+    ...
+  }
+}
   ↓
-NockApp processes query:
-  1. Verify document commitment exists
-  2. Decrypt query (if user authorized)
-  3. Process RAG query on-chain:
-     - Generate embeddings (or use oracle)
-     - Search committed documents
-     - Generate response
-  4. Create ZK proof of computation
-  ↓
-Return: Response + ZK Proof
-  ↓
-Client verifies proof locally
+Document stays on user's device (never transmitted)
 ```
 
-### Flow 3: Proof Verification
+### Flow 2: Generate Commitment
 
 ```
-Anyone can submit proof for verification
+User requests commitment
   ↓
-NockApp verifies:
-  - Proof cryptographically valid
-  - Public inputs match (commitment, model hash, timestamp)
-  - Document commitment was registered
+POST /commit {"document_id": "doc_passport_001"}
   ↓
-Record verification on-chain
+Rust Driver:
+  1. Read document from ~/.zkvsai/documents/passport.json
+  2. Validate against schema
+  3. Serialize to noun
   ↓
-Return verification result
+Hoon NockApp:
+  4. Hash document contents
+  5. Generate commitment
+  6. Store commitment in state
+  ↓
+Return: commitment hash
+  ↓
+Commitment can be published (document remains private)
 ```
 
-## Technology Stack (Corrected)
+### Flow 3: Prove Claim About Document
 
-### Core Platform (NockApp)
-- **Hoon**: Current implementation language
-- **Jock**: Future/experimental (evaluate periodically)
-- **Nock**: Compilation target
-- **Nockchain**: Execution environment
+```
+User requests proof of claim
+  ↓
+POST /prove {
+  "document_id": "doc_passport_001",
+  "claim": "not_expired",
+  "params": {"as_of": "2026-01-05"}
+}
+  ↓
+Rust Driver:
+  1. Read document from disk
+  2. Parse claim request
+  ↓
+Hoon NockApp:
+  3. Validate document commitment exists
+  4. Extract relevant fields (expiration date)
+  5. Prepare witness for ZK circuit
+  ↓
+ZK Circuit:
+  6. Private input: document data, expiration date
+  7. Public input: commitment, claim type, current date
+  8. Constraint: expiration > current_date
+  9. Generate proof
+  ↓
+Return: {
+  "proof": "...",
+  "public_inputs": {
+    "commitment": "abc123...",
+    "claim": "not_expired",
+    "result": true
+  }
+}
+  ↓
+Proof can be shared (document never revealed)
+```
+
+### Flow 4: Verify Proof
+
+```
+Anyone with proof can verify
+  ↓
+POST /verify {"proof": "...", "public_inputs": {...}}
+  ↓
+Verification:
+  1. Check proof cryptographically valid
+  2. Check commitment was registered
+  3. Validate public inputs
+  ↓
+Return: {"valid": true, "verified_at": "..."}
+  ↓
+Verifier learns: "claim is true"
+Verifier does NOT learn: document contents
+```
+
+## Claim Types
+
+Claims are assertions about document contents that can be proven without revealing the data.
+
+### Expiration Claims
+
+| Claim | Description | Example |
+|-------|-------------|---------|
+| `not_expired` | Document expiration > current date | Passport valid for travel |
+| `expires_after` | Expiration > specified date | License valid through trip |
+
+### Range Claims
+
+| Claim | Description | Example |
+|-------|-------------|---------|
+| `age_over` | Birth date implies age > N | Over 21 for alcohol |
+| `credit_above` | Credit limit > threshold | Qualifies for rental |
+
+### Existence Claims
+
+| Claim | Description | Example |
+|-------|-------------|---------|
+| `has_field` | Document contains field | Has passport number |
+| `field_matches` | Field equals value | Country is "USA" |
+
+### Future Claim Types
+
+- Composite claims (AND/OR of multiple claims)
+- Cross-document claims (same name on passport and license)
+- Delegation claims (authorize agent to use proof)
+
+## Technology Stack
+
+### Core Platform
+- **Hoon**: NockApp logic (`nockapp/hoon/zkrag.hoon`)
+- **Nock**: Execution target
+- **Nockchain**: Runtime and settlement
 
 ### Infrastructure
-- **Rust**: HTTP driver, noun handling, potentially ZK proof verification
-- **Nockchain**: Blockchain consensus and settlement
+- **Rust**: HTTP driver, file I/O, ZK circuits
+- **arkworks**: ZK proof library
+- **Groth16**: Proof system
 
-### Tooling & Testing (Python)
-- **Python**: Client SDK, testing tools, development utilities
-- **NOT**: Core platform implementation
+### Testing
+- **Python**: Test harness and utilities (not platform)
 
 ## Jock Integration Strategy
 
-### Current Status (June 2025+)
-- Jock is in **alpha** by Zorp Corp
-- Compiles to Nock
-- Syntax inspired by Swift/Python
-- Integrates with Hoon stdlib
+Jock is a new language for Nock (like Hoon but with Swift/Python-like syntax).
 
-### Evaluation Plan
+**Current Status**: Alpha (as of 2025)
 
-**Phase 1: Monitoring** (Ongoing)
-- Track Jock development at [docs.jock.org](https://docs.jock.org)
-- Review [zorp-corp/jock-lang](https://github.com/zorp-corp/jock-lang)
-- Monitor feature releases
+**Strategy**:
+1. **Now**: Build with Hoon (stable)
+2. **Monitor**: Check Jock monthly at [docs.jock.org](https://docs.jock.org)
+3. **Experiment**: When Jock reaches beta
+4. **Migrate**: If Jock proves superior
 
-**Phase 2: Experimentation** (When Jock stabilizes)
-- Implement simple NockApp components in Jock
-- Compare Hoon vs Jock implementations
-- Evaluate developer experience
+See `docs/JOCK_EVALUATION.md` for detailed evaluation plan.
 
-**Phase 3: Migration** (If Jock proves superior)
-- Gradually rewrite Hoon components in Jock
-- Maintain parallel implementations during transition
-- Full migration if Jock becomes stable
+## Privacy Model
 
-### What to Watch For
-- ✅ Type system maturity
-- ✅ Performance optimizations
-- ✅ Debugging tools
-- ✅ Community adoption
-- ✅ Stability of syntax
+### What Stays Private (Off-Chain)
 
-## Revised Component Roles
+| Data | Location | Never Transmitted |
+|------|----------|-------------------|
+| Document contents | `~/.zkvsai/documents/` | ✅ |
+| Field values | User's device | ✅ |
+| Raw credentials | User's device | ✅ |
 
-### NockApp (Hoon/Jock) - CORE PLATFORM
-**Implements**:
-- Document commitment registry
-- Model registry
-- Query processing logic
-- RAG computation (on-chain or via oracle)
-- Proof generation coordination
-- State management
+### What Can Be Public (On-Chain)
 
-**Does NOT do**:
-- Direct file system access (uses commitments)
-- External API calls (uses oracles if needed)
-- Client-side UX (that's for clients)
+| Data | Purpose |
+|------|---------|
+| Document commitment (hash) | Proves document exists |
+| Claim type | What was proven |
+| Proof result (true/false) | Claim validity |
+| ZK proof | Cryptographic verification |
 
-### Rust Driver - HTTP GATEWAY
-**Implements**:
-- HTTP REST API
-- Noun serialization
-- Kernel communication
-- CORS, routing, etc.
+### Privacy Guarantees
 
-**Does NOT do**:
-- Business logic (that's in Hoon/Jock)
-- State management (that's in NockApp)
-- RAG processing (that's in NockApp)
+1. **Document Privacy**: Contents never leave device
+2. **Selective Disclosure**: Prove specific claims without revealing all data
+3. **Unlinkability**: Different proofs can't be linked to same document (future)
+4. **Verifier Privacy**: Verifier learns only claim result, nothing else
 
-### Python Tools - TESTING & CLIENT SDK
-**Implements**:
-- Test harness for NockApp
-- Client SDK for interacting with NockApp
-- Development utilities
-- Benchmarking tools
+## API Reference
 
-**Does NOT do**:
-- Platform implementation
-- Production RAG engine
-- On-chain logic
+### Endpoints
 
-## Privacy Model (Corrected)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/documents` | List document IDs |
+| GET | `/documents/:id` | Get document metadata (not contents) |
+| POST | `/commit` | Generate commitment for document |
+| POST | `/prove` | Generate proof for claim |
+| POST | `/verify` | Verify a proof |
 
-### On-Chain (Public)
-- Document commitments (Merkle roots)
-- Model hashes
-- Verification proofs
-- Query timestamps (if public queries)
+### Example Requests
 
-### Off-Chain (Private)
-- Actual document contents (never submitted)
-- Query text (encrypted if submitted)
-- Intermediate computation results
+**Generate Commitment:**
+```bash
+curl -X POST http://localhost:8080/commit \
+  -H "Content-Type: application/json" \
+  -d '{"document_id": "doc_passport_001"}'
+```
 
-### How Privacy Works
+**Prove Claim:**
+```bash
+curl -X POST http://localhost:8080/prove \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_id": "doc_passport_001",
+    "claim": "not_expired",
+    "params": {"as_of": "2026-01-05"}
+  }'
+```
 
-**Option A: Fully On-Chain RAG** (Future)
-- NockApp has oracle access to embedding models
-- Processes encrypted queries on-chain
-- Uses ZK circuits to prove correct computation
-- Most private, but requires oracle infrastructure
+**Verify Proof:**
+```bash
+curl -X POST http://localhost:8080/verify \
+  -H "Content-Type: application/json" \
+  -d '{"proof": "...", "public_inputs": {...}}'
+```
 
-**Option B: Hybrid** (More practical short-term)
-- User generates embeddings locally
-- Submits commitment + encrypted query
-- NockApp verifies commitments and records query
-- Proof demonstrates query used registered documents
+## Implementation Phases
 
-## Comparison to Initial Design
+### Phase 1: Foundation (Current)
+- [x] Document schema specification
+- [x] Architecture documentation
+- [ ] Rust driver file I/O
+- [ ] Hoon document handling
+- [ ] Basic commitment generation
 
-| Aspect | Initial (Incorrect) | Revised (Correct) |
-|--------|-------------------|-------------------|
-| Core Platform | Python RAG engine | Hoon/Jock NockApp |
-| Where RAG runs | Local Python process | On-chain (NockApp) |
-| Python's role | Core implementation | Testing & client tools |
-| Embeddings | Python sentence-transformers | On-chain or oracle |
-| State management | Python DocumentManager | Hoon NockApp state |
-| Nockchain role | Just verification | Entire platform runtime |
+### Phase 2: Proof Generation
+- [ ] Expiration claim circuits
+- [ ] Range claim circuits (age, credit)
+- [ ] Proof serialization
 
-## Why This Matters
+### Phase 3: Integration
+- [ ] End-to-end workflow
+- [ ] Nockchain settlement
+- [ ] Verification on-chain
 
-### Incorrect Approach (What I built initially)
-- Python as core platform ❌
-- Nockchain only for proof verification ❌
-- Separate Python process for RAG ❌
-- Python manages state ❌
+### Phase 4: Advanced (Future)
+- [ ] AI agent proof handoff
+- [ ] Multi-document proofs
+- [ ] Delegation claims
 
-### Correct Approach (What should be built)
-- NockApp as core platform ✅
-- Nockchain runs everything ✅
-- Hoon/Jock implements RAG logic ✅
-- NockApp manages state ✅
-- Python only for testing/tooling ✅
+## Related Documents
 
-## Implementation Priorities (Revised)
+- `docs/DOCUMENT_SCHEMA.md` - Document format specification
+- `docs/JOCK_EVALUATION.md` - Jock language evaluation
+- `CLAUDE.md` - Development guidance
+- `PROJECT_STATUS.md` - Current implementation status
 
-### Phase 1: NockApp Foundation
-- [ ] Document registry in Hoon
-- [ ] Model registry in Hoon
-- [ ] Basic query handler in Hoon
-- [ ] State management
+## Summary
 
-### Phase 2: RAG Logic (Hoon/Jock)
-- [ ] Commitment verification
-- [ ] Query processing logic
-- [ ] Response generation
-- [ ] Oracle integration (if needed for embeddings)
+**ZKvsAI Architecture:**
 
-### Phase 3: ZK Integration
-- [ ] Proof generation coordination
-- [ ] Proof verification in Hoon/Jock
-- [ ] Circuit design for RAG operations
+```
+Documents (local) → Rust Driver → Hoon NockApp → ZK Proofs → Nockchain
+     │                                              │
+     └──────────── Never transmitted ───────────────┘
+```
 
-### Phase 4: Jock Evaluation
-- [ ] Implement sample components in Jock
-- [ ] Compare Hoon vs Jock
-- [ ] Migration plan if Jock is superior
-
-### Phase 5: Client Tools (Python)
-- [ ] HTTP client SDK
-- [ ] Testing framework
-- [ ] Benchmark tools
-
-## Sources
-
-- [Introduction to Jock](https://docs.jock.org/)
-- [Introducing Jock: A Friendly Programming Language for the Nock Ecosystem](https://www.nockchain.org/introducing-jock-a-friendly-programming-language-for-the-nock-ecosystem/)
-- [Jock and Awe](https://www.nockchain.org/jock-and-awe/)
-- [GitHub - zorp-corp/jock-lang](https://github.com/zorp-corp/jock-lang)
-- [Jock Language Developer Preview](https://zorp.io/blog/jock)
-
-## Next Steps
-
-1. **Refocus on NockApp** - Hoon implementation first
-2. **Evaluate Jock** - Track development, experiment when stable
-3. **Reposition Python** - Testing and client SDK only
-4. **Design oracle strategy** - For embeddings and external data
-5. **ZK circuits** - Prove NockApp computations
-
-## Critical Takeaway
-
-**ZKvsAI is a NockApp, not a Python application.**
-
-The platform runs on Nockchain, implemented in Hoon/Jock, with Rust providing HTTP access and Python providing testing/client tools.
+Your credentials stay on your device. Only cryptographic proofs leave.
